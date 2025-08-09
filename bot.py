@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 # ==== CONFIG ====
 BOT_TOKEN = "8414351117:AAEDEkc1VblJ8NU8Umle1gby1KyY94Gd1x4"  # 🔹 Your bot token from file
-MONGO_URI = "mongodb+srv://<username>:<password>@<cluster>/?retryWrites=true&w=majority"  # 🔹 Paste your MongoDB URI here
+MONGO_URI = "mongodb+srv://afzal99550:afzal99550@cluster0.aqmbh9q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"  # 🔹 Paste your MongoDB URI here
 LOG_CHANNEL_ID = -1002330347621
 OWNER_ID = 6998916494
 
@@ -251,3 +251,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
