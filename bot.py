@@ -8,8 +8,7 @@ BOT_TOKEN = "8414351117:AAEDEkc1VblJ8NU8Umle1gby1KyY94Gd1x4"
 
 # ====== /start COMMAND ======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot is running! Use /ping to check latency and time.")
-
+    await update.message.reply_text
 # ====== /ping COMMAND ======
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
@@ -30,3 +29,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
