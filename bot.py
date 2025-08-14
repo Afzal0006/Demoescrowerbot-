@@ -5,14 +5,16 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from pymongo import MongoClient
 
 # ==== CONFIG ====
-BOT_TOKEN = "8414351117:AAEDEkc1VblJ8NU8Umle1gby1KyY94Gd1x4"  # 🔹 Your bot token from file
-MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"  # 🔹 Paste your MongoDB URI here
+BOT_TOKEN = "8414351117:AAEDEkc1VblJ8NU8Umle1gby1KyY94Gd1x4"
+MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL_ID = -1002330347621
-OWNER_ID = 6998916494, 7055347499
+
+# Multiple owner IDs
+OWNER_IDS = [6998916494, 7055347499]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
-db = client["escrow_bot"]  # Database name
+db = client["escrow_bot"]
 groups_col = db["groups"]
 global_col = db["global"]
 admins_col = db["admins"]
@@ -30,7 +32,7 @@ if not global_col.find_one({"_id": "stats"}):
 # ==== HELPERS ====
 async def is_admin(update: Update) -> bool:
     user_id = update.effective_user.id
-    if user_id == OWNER_ID:
+    if user_id in OWNER_IDS:  # Multi-owner check
         return True
     return admins_col.find_one({"user_id": user_id}) is not None
 
@@ -74,8 +76,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode="HTML")
 
 async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != OWNER_ID:
-        return await update.message.reply_text("❌ Only owner can add admins!")
+    if update.effective_user.id not in OWNER_IDS:
+        return await update.message.reply_text("❌ Only owners can add admins!")
     if len(context.args) != 1 or not context.args[0].isdigit():
         return await update.message.reply_text("Usage: /addadmin <user_id>")
     user_id = int(context.args[0])
@@ -85,8 +87,8 @@ async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Added admin: {user_id}")
 
 async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != OWNER_ID:
-        return await update.message.reply_text("❌ Only owner can remove admins!")
+    if update.effective_user.id not in OWNER_IDS:
+        return await update.message.reply_text("❌ Only owners can remove admins!")
     if len(context.args) != 1 or not context.args[0].isdigit():
         return await update.message.reply_text("Usage: /removeadmin <user_id>")
     user_id = int(context.args[0])
@@ -251,7 +253,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
