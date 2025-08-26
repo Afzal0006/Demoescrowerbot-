@@ -7,7 +7,7 @@ from pymongo import MongoClient
 # ==== CONFIG ====
 BOT_TOKEN = "8485351031:AAFpu1Oi44l4KQG_B04H9M07AHc3FvNd73I"
 MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-LOG_CHANNEL_ID = -1002330347621
+LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
 OWNER_IDS = [7727059592]  # Add as many IDs as you want
@@ -253,5 +253,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
