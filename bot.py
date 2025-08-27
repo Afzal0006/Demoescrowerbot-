@@ -5,11 +5,11 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from pymongo import MongoClient
 
 # ==== CONFIG ====
-BOT_TOKEN = "8466069044:AAFaAtC5qDnZI8p8QkxsHOONKdjhJCKdRmk"
+BOT_TOKEN = "8485351031:AAFpu1Oi44l4KQG_B04H9M07AHc3FvNd73I"
 MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL_ID = -1002826823679
 
-OWNER_IDS = [7363327309]  # Add multiple owner IDs if needed
+OWNER_IDS = [7727059592]
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -126,7 +126,8 @@ async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         trade_id = f"TID{random.randint(100000, 999999)}"
         fee = 0.0
         release_amount = round(amount - fee, 2)
-        deals[reply_id] = {"trade_id": trade_id, "release_amount": release_amount, "completed": False, "escrower": escrower_name, "buyer": buyer, "seller": seller}
+        deals[reply_id] = {"trade_id": trade_id, "release_amount": release_amount, "completed": False,
+                           "escrower": escrower_name, "buyer": buyer, "seller": seller}
     else:
         trade_id = deals[reply_id]["trade_id"]
         release_amount = deals[reply_id]["release_amount"]
@@ -230,5 +231,7 @@ async def global_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔹 Total Deals: {g['total_deals']}\n"
         f"💰 Total Volume: ₹{g['total_volume']}\n"
         f"💸 Total Fee: ₹{g['total_fee']}"
+    )
+    await update.message.reply_text(msg)
 
 
