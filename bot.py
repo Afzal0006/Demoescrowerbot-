@@ -5,11 +5,11 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from pymongo import MongoClient
 
 # ==== CONFIG ====
-BOT_TOKEN = "8485351031:AAFpu1Oi44l4KQG_B04H9M07AHc3FvNd73I"
+BOT_TOKEN = "8466069044:AAFaAtC5qDnZI8p8QkxsHOONKdjhJCKdRmk"
 MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL_ID = -1002826823679
 
-OWNER_IDS = [7727059592]
+OWNER_IDS = [7363327309]
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -233,5 +233,6 @@ async def global_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💸 Total Fee: ₹{g['total_fee']}"
     )
     await update.message.reply_text(msg)
+
 
 
