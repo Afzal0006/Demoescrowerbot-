@@ -176,10 +176,10 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         f"✅ <b>Deal Completed!</b>\n"
         "────────────────\n"
-        f"👤 Buyer   : {buyer}\n"
+        f"👤 Buyer  : {buyer}\n"
         f"👤 Seller  : {seller}\n"
-        f"💸 Released: ₹{released}\n"
-        f"🆔 Trade ID: #{trade_id}\n"
+        f"💸 Released : ₹{released}\n"
+        f"🆔 Trade ID : #{trade_id}\n"
         f"💰 Fee     : ₹{fee}\n"
         "────────────────\n"
         f"🛡️ Escrowed by {escrower}"
@@ -240,6 +240,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
