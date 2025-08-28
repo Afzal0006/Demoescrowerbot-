@@ -5,12 +5,12 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from pymongo import MongoClient
 
 # ==== CONFIG ====
-BOT_TOKEN = "8466069044:AAFlQlZ2N7rMeBvlMsABJIPJHjAshGVfQdU"
+BOT_TOKEN = "8485351031:AAFpu1Oi44l4KQG_B04H9M07AHc3FvNd73I"
 MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
-OWNER_IDS = [7363327309]  # Add as many IDs as you want
+OWNER_IDS = [7727059592]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -32,7 +32,7 @@ if not global_col.find_one({"_id": "stats"}):
 # ==== HELPERS ====
 async def is_admin(update: Update) -> bool:
     user_id = update.effective_user.id
-    if user_id in OWNER_IDS:  # Multi-owner check
+    if user_id in OWNER_IDS:
         return True
     return admins_col.find_one({"user_id": user_id}) is not None
 
@@ -47,18 +47,16 @@ def init_group(chat_id: str):
             "escrowers": {}
         })
 
-def update_escrower_stats(group_id: str, escrower: str, amount: float, fee: float):
+def update_escrower_stats(group_id: str, escrower: str, amount: float):
     g = groups_col.find_one({"_id": group_id})
     g["total_deals"] += 1
     g["total_volume"] += amount
-    g["total_fee"] += fee
     g["escrowers"][escrower] = g["escrowers"].get(escrower, 0) + amount
     groups_col.update_one({"_id": group_id}, {"$set": g})
 
     global_data = global_col.find_one({"_id": "stats"})
     global_data["total_deals"] += 1
     global_data["total_volume"] += amount
-    global_data["total_fee"] += fee
     global_data["escrowers"][escrower] = global_data["escrowers"].get(escrower, 0) + amount
     global_col.update_one({"_id": "stats"}, {"$set": global_data})
 
@@ -74,26 +72,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /removeadmin user_id – Owner only"
     )
     await update.message.reply_text(msg, parse_mode="HTML")
-
-async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id not in OWNER_IDS:
-        return await update.message.reply_text("❌ Only owners can add admins!")
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        return await update.message.reply_text("Usage: /addadmin <user_id>")
-    user_id = int(context.args[0])
-    if admins_col.find_one({"user_id": user_id}):
-        return await update.message.reply_text("⚠️ Already admin!")
-    admins_col.insert_one({"user_id": user_id})
-    await update.message.reply_text(f"✅ Added admin: {user_id}")
-
-async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id not in OWNER_IDS:
-        return await update.message.reply_text("❌ Only owners can remove admins!")
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        return await update.message.reply_text("Usage: /removeadmin <user_id>")
-    user_id = int(context.args[0])
-    admins_col.delete_one({"user_id": user_id})
-    await update.message.reply_text(f"✅ Removed admin: {user_id}")
 
 async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
@@ -123,17 +101,18 @@ async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     g = groups_col.find_one({"_id": chat_id})
     deals = g["deals"]
-    if reply_id not in deals:
-        trade_id = f"TID{random.randint(100000, 999999)}"
-        deals[reply_id] = {"trade_id": trade_id, "release_amount": amount, "completed": False}
-    else:
-        trade_id = deals[reply_id]["trade_id"]
+    trade_id = f"TID{random.randint(100000, 999999)}"
+    deals[reply_id] = {
+        "trade_id": trade_id,
+        "added_amount": amount,
+        "completed": False
+    }
 
     g["deals"] = deals
     groups_col.update_one({"_id": chat_id}, {"$set": g})
 
     escrower = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.full_name
-    update_escrower_stats(chat_id, escrower, amount, 0.0)
+    update_escrower_stats(chat_id, escrower, amount)
 
     msg = (
         f"✅ <b>Amount Received!</b>\n"
@@ -160,7 +139,7 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args or not context.args[0].replace(".", "", 1).isdigit():
         return await update.message.reply_text("❌ Please provide amount like /complete 50")
 
-    amount = float(context.args[0])
+    released = float(context.args[0])
 
     chat_id = str(update.effective_chat.id)
     reply_id = str(update.message.reply_to_message.message_id)
@@ -174,11 +153,20 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     deal_info["completed"] = True
     g["deals"][reply_id] = deal_info
+
+    # ✅ Calculate fee
+    added_amount = deal_info["added_amount"]
+    fee = added_amount - released if added_amount > released else 0
+
+    g["total_fee"] += fee
     groups_col.update_one({"_id": chat_id}, {"$set": g})
 
-    original_text = update.message.reply_to_message.text
-    buyer_match = re.search(r"BUYER\s*:\s*(@\w+)", original_text, re.IGNORECASE)
-    seller_match = re.search(r"SELLER\s*:\s*(@\w+)", original_text, re.IGNORECASE)
+    global_data = global_col.find_one({"_id": "stats"})
+    global_data["total_fee"] += fee
+    global_col.update_one({"_id": "stats"}, {"$set": global_data})
+
+    buyer_match = re.search(r"BUYER\s*:\s*(@\w+)", update.message.reply_to_message.text, re.IGNORECASE)
+    seller_match = re.search(r"SELLER\s*:\s*(@\w+)", update.message.reply_to_message.text, re.IGNORECASE)
     buyer = buyer_match.group(1) if buyer_match else "Unknown"
     seller = seller_match.group(1) if seller_match else "Unknown"
 
@@ -190,8 +178,9 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "────────────────\n"
         f"👤 Buyer   : {buyer}\n"
         f"👤 Seller  : {seller}\n"
-        f"💸 Released: ₹{amount}\n"
+        f"💸 Released: ₹{released}\n"
         f"🆔 Trade ID: #{trade_id}\n"
+        f"💰 Fee     : ₹{fee}\n"
         "────────────────\n"
         f"🛡️ Escrowed by {escrower}"
     )
@@ -202,8 +191,9 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "────────────────\n"
         f"👤 Buyer   : {buyer}\n"
         f"👤 Seller  : {seller}\n"
-        f"💸 Released: ₹{amount}\n"
+        f"💸 Released: ₹{released}\n"
         f"🆔 Trade ID: #{trade_id}\n"
+        f"💰 Fee     : ₹{fee}\n"
         f"🛡️ Escrowed by {escrower}\n"
         f"📌 Group: {update.effective_chat.title} ({update.effective_chat.id})"
     )
@@ -245,14 +235,11 @@ def main():
     app.add_handler(CommandHandler("complete", complete_deal))
     app.add_handler(CommandHandler("stats", group_stats))
     app.add_handler(CommandHandler("gstats", global_stats))
-    app.add_handler(CommandHandler("addadmin", add_admin))
-    app.add_handler(CommandHandler("removeadmin", remove_admin))
     print("Bot started... ✅")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
 
 
 
