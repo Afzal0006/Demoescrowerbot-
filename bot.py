@@ -64,8 +64,8 @@ def update_escrower_stats(group_id: str, escrower: str, amount: float):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "✨ <b>Welcome to Escrower Bot!</b> ✨\n\n"
-        "• /add <amount> – Add a new deal\n"
-        "• /complete <amount> – Complete a deal\n"
+        "• /add &lt;amount&gt; – Add a new deal\n"
+        "• /complete &lt;amount&gt; – Complete a deal\n"
         "• /stats – Group stats\n"
         "• /gstats – Global stats (Admin only)\n"
         "• /addadmin user_id – Owner only\n"
