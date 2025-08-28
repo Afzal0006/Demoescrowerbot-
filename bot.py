@@ -5,12 +5,12 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from pymongo import MongoClient
 
 # ==== CONFIG ====
-BOT_TOKEN = "8466069044:AAGiIqbxx8mEIZsOOFFTmCETvDfRCMwmWiM"
+BOT_TOKEN = "8485351031:AAFpu1Oi44l4KQG_B04H9M07AHc3FvNd73I"
 MONGO_URI = "mongodb+srv://GfNF2cIHLNozy5Q2:GfNF2cIHLNozy5Q2@cluster0.8wjyhsl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
-OWNER_IDS = [7363327309]  # Add as many IDs as you want
+OWNER_IDS = [7727059592]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -112,33 +112,32 @@ async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buyer_match = re.search(r"BUYER\s*:\s*(@\w+)", original_text, re.IGNORECASE)
     seller_match = re.search(r"SELLER\s*:\s*(@\w+)", original_text, re.IGNORECASE)
-    amount_match = re.search(r"DEAL AMOUNT\s*:\s*₹?\s*([\d.]+)", original_text, re.IGNORECASE)
 
     buyer = buyer_match.group(1) if buyer_match else "Unknown"
     seller = seller_match.group(1) if seller_match else "Unknown"
-    if not amount_match:
-        return await update.message.reply_text("❌ Amount not found!")
-    amount = float(amount_match.group(1))
+
+    # ✅ Now amount always comes from /add {amount}
+    if context.args and context.args[0].replace(".", "", 1).isdigit():
+        amount = float(context.args[0])
+    else:
+        return await update.message.reply_text("❌ Please provide amount like /add 50")
 
     g = groups_col.find_one({"_id": chat_id})
     deals = g["deals"]
     if reply_id not in deals:
         trade_id = f"TID{random.randint(100000, 999999)}"
-        fee = 0.0
-        release_amount = round(amount - fee, 2)
+        release_amount = amount
         deals[reply_id] = {"trade_id": trade_id, "release_amount": release_amount, "completed": False}
     else:
         trade_id = deals[reply_id]["trade_id"]
         release_amount = deals[reply_id]["release_amount"]
-        fee = round(amount - release_amount, 2)
 
     g["deals"] = deals
     groups_col.update_one({"_id": chat_id}, {"$set": g})
 
     escrower = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.full_name
-    update_escrower_stats(chat_id, escrower, amount, fee)
+    update_escrower_stats(chat_id, escrower, amount, 0.0)
 
-    # ✅ Updated output format for /add
     msg = (
         f"/add {amount}\n\n"
         f"✅ <b>Amount Received!</b>\n"
@@ -186,7 +185,6 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     release_amount = deal_info["release_amount"]
     trade_id = deal_info["trade_id"]
 
-    # ✅ Updated output format for /complete
     msg = (
         f"/complete {release_amount}\n\n"
         f"✅ <b>Deal Completed!</b>\n"
@@ -255,4 +253,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
