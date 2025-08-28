@@ -138,14 +138,14 @@ async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     escrower = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.full_name
     update_escrower_stats(chat_id, escrower, amount, fee)
 
+    # ✅ Updated output format for /add
     msg = (
-        "✅ <b>Amount Received!</b>\n"
+        f"/add {amount}\n\n"
+        f"✅ <b>Amount Received!</b>\n"
         "────────────────\n"
         f"👤 Buyer  : {buyer}\n"
         f"👤 Seller : {seller}\n"
         f"💰 Amount : ₹{amount}\n"
-        f"💸 Release: ₹{release_amount}\n"
-        f"⚖️ Fee    : ₹{fee}\n"
         f"🆔 Trade ID: #{trade_id}\n"
         "────────────────\n"
         f"🛡️ Escrowed by {escrower}"
@@ -186,8 +186,10 @@ async def complete_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     release_amount = deal_info["release_amount"]
     trade_id = deal_info["trade_id"]
 
+    # ✅ Updated output format for /complete
     msg = (
-        "✅ <b>Deal Completed!</b>\n"
+        f"/complete {release_amount}\n\n"
+        f"✅ <b>Deal Completed!</b>\n"
         "────────────────\n"
         f"👤 Buyer   : {buyer}\n"
         f"👤 Seller  : {seller}\n"
@@ -253,7 +255,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
