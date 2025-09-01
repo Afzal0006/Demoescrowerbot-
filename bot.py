@@ -10,7 +10,7 @@ MONGO_URI = "mongodb+srv://afzal99550:afzal99550@cluster0.aqmbh9q.mongodb.net/?r
 LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
-OWNER_IDS = [6998916494]  # Add as many IDs as you want
+OWNER_IDS = [7363327309]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -64,12 +64,13 @@ def update_escrower_stats(group_id: str, escrower: str, amount: float):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "✨ <b>Welcome to Escrower Bot!</b> ✨\n\n"
-        "• /add &lt;amount&gt; – Add a new deal\n"
-        "• /complete &lt;amount&gt; – Complete a deal\n"
+        "• /add <amount> – Add a new deal\n"
+        "• /complete <amount> – Complete a deal\n"
         "• /stats – Group stats\n"
         "• /gstats – Global stats (Admin only)\n"
         "• /addadmin user_id – Owner only\n"
-        "• /removeadmin user_id – Owner only"
+        "• /removeadmin user_id – Owner only\n"
+        "• /adminlist – Show all admins"
     )
     await update.message.reply_text(msg, parse_mode="HTML")
 
@@ -227,6 +228,46 @@ async def global_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(msg)
 
+# ==== ADMIN COMMANDS ====
+async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in OWNER_IDS:
+        return await update.message.reply_text("❌ Only owners can add admins!")
+
+    if not context.args or not context.args[0].isdigit():
+        return await update.message.reply_text("❌ Provide a valid user_id, e.g. /addadmin 123456789")
+
+    new_admin_id = int(context.args[0])
+    if admins_col.find_one({"user_id": new_admin_id}):
+        return await update.message.reply_text("⚠️ Already an admin!")
+
+    admins_col.insert_one({"user_id": new_admin_id})
+    await update.message.reply_text(f"✅ Added as admin: <code>{new_admin_id}</code>", parse_mode="HTML")
+
+async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in OWNER_IDS:
+        return await update.message.reply_text("❌ Only owners can remove admins!")
+
+    if not context.args or not context.args[0].isdigit():
+        return await update.message.reply_text("❌ Provide a valid user_id, e.g. /removeadmin 123456789")
+
+    remove_id = int(context.args[0])
+    if not admins_col.find_one({"user_id": remove_id}):
+        return await update.message.reply_text("⚠️ This user is not an admin!")
+
+    admins_col.delete_one({"user_id": remove_id})
+    await update.message.reply_text(f"✅ Removed admin: <code>{remove_id}</code>", parse_mode="HTML")
+
+async def admin_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_admin(update):
+        return
+    admins = list(admins_col.find({}, {"_id": 0, "user_id": 1}))
+    owners = [f"⭐ Owner: <code>{oid}</code>" for oid in OWNER_IDS]
+    admins_text = "\n".join([f"👮 Admin: <code>{a['user_id']}</code>" for a in admins]) or "No extra admins added."
+    msg = "📋 <b>Admin List</b>\n\n" + "\n".join(owners) + "\n" + admins_text
+    await update.message.reply_text(msg, parse_mode="HTML")
+
 # ==== MAIN ====
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
@@ -235,29 +276,11 @@ def main():
     app.add_handler(CommandHandler("complete", complete_deal))
     app.add_handler(CommandHandler("stats", group_stats))
     app.add_handler(CommandHandler("gstats", global_stats))
+    app.add_handler(CommandHandler("addadmin", add_admin))
+    app.add_handler(CommandHandler("removeadmin", remove_admin))
+    app.add_handler(CommandHandler("adminlist", admin_list))
     print("Bot started... ✅")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
