@@ -10,7 +10,7 @@ MONGO_URI = "mongodb+srv://afzal99550:afzal99550@cluster0.aqmbh9q.mongodb.net/?r
 LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
-OWNER_IDS = [7363327309]  # Add as many IDs as you want
+OWNER_IDS = [6998916494]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -240,6 +240,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
