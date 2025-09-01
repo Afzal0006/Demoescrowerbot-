@@ -10,7 +10,7 @@ MONGO_URI = "mongodb+srv://TRUSTLYTRANSACTIONBOT:TRUSTLYTRANSACTIONBOT@cluster0.
 LOG_CHANNEL_ID = -1002826823679
 
 # Multiple owner IDs
-OWNER_IDS = [7363327309]  # Add as many IDs as you want
+OWNER_IDS = [6998916494]  # Add as many IDs as you want
 
 # ==== MONGO CONNECT ====
 client = MongoClient(MONGO_URI)
@@ -74,6 +74,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(msg, parse_mode="HTML")
 
+# ==== DEAL HANDLERS (same as before, unchanged) ====
 async def add_deal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
@@ -238,11 +239,22 @@ async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await update.message.reply_text("❌ Provide a valid user_id, e.g. /addadmin 123456789")
 
     new_admin_id = int(context.args[0])
+
     if admins_col.find_one({"user_id": new_admin_id}):
         return await update.message.reply_text("⚠️ Already an admin!")
 
-    admins_col.insert_one({"user_id": new_admin_id})
-    await update.message.reply_text(f"✅ Added as admin: <code>{new_admin_id}</code>", parse_mode="HTML")
+    # Fetch username
+    try:
+        user_obj = await context.bot.get_chat(new_admin_id)
+        username = f"@{user_obj.username}" if user_obj.username else None
+    except:
+        username = None
+
+    admins_col.insert_one({"user_id": new_admin_id, "username": username})
+    await update.message.reply_text(
+        f"✅ Added as admin: <code>{new_admin_id}</code> {username or ''}",
+        parse_mode="HTML"
+    )
 
 async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -259,13 +271,33 @@ async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admins_col.delete_one({"user_id": remove_id})
     await update.message.reply_text(f"✅ Removed admin: <code>{remove_id}</code>", parse_mode="HTML")
 
+    # Auto show updated list
+    await admin_list(update, context)
+
 async def admin_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-    admins = list(admins_col.find({}, {"_id": 0, "user_id": 1}))
-    owners = [f"⭐ Owner: <code>{oid}</code>" for oid in OWNER_IDS]
-    admins_text = "\n".join([f"👮 Admin: <code>{a['user_id']}</code>" for a in admins]) or "No extra admins added."
-    msg = "📋 <b>Admin List</b>\n\n" + "\n".join(owners) + "\n" + admins_text
+
+    # Owners
+    owners = []
+    for oid in OWNER_IDS:
+        try:
+            owner_obj = await context.bot.get_chat(oid)
+            username = f"@{owner_obj.username}" if owner_obj.username else ""
+            owners.append(f"⭐ Owner: <code>{oid}</code> {username}")
+        except:
+            owners.append(f"⭐ Owner: <code>{oid}</code>")
+
+    # Admins
+    admins = list(admins_col.find({}, {"_id": 0, "user_id": 1, "username": 1}))
+    admins_text = []
+    for a in admins:
+        line = f"👮 Admin: <code>{a['user_id']}</code>"
+        if a.get("username"):
+            line += f" {a['username']}"
+        admins_text.append(line)
+
+    msg = "📋 <b>Admin List</b>\n\n" + "\n".join(owners) + "\n" + ("\n".join(admins_text) or "No extra admins added.")
     await update.message.reply_text(msg, parse_mode="HTML")
 
 # ==== MAIN ====
@@ -284,4 +316,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
